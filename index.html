@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="es" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Genética EF</title>
+<meta name="description" content="Estudio para el Examen Final de Genética (semanas 9–14): teoría, cómo resolver, práctica con autograder, simulacros y simulador de notas.">
+<meta name="theme-color" content="#2f63d6">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Genética EF">
+<script>
+  // Tema: claro por defecto; se recuerda la elección.
+  (function () { try { var t = localStorage.getItem('gef:theme'); if (t) document.documentElement.setAttribute('data-theme', JSON.parse(t)); } catch (e) {} })();
+</script>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="brand">
+      <img src="icons/icon-192.png" alt="" width="32" height="32">
+      <div style="min-width:0">
+        <div class="brand-t">Genética · Examen Final</div>
+        <div class="brand-s">Semanas 9–14 · Dr. Luis Jaramillo</div>
+      </div>
+    </div>
+    <button class="btn icon ghost" id="themeBtn" aria-label="Cambiar tema claro/oscuro" title="Cambiar tema">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    </button>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="Secciones">
+    <button class="tab" role="tab" data-tab="teoria" aria-selected="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg><span>Teoría</span></button>
+    <button class="tab" role="tab" data-tab="resolver" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.6.5 1 1.3 1 2.3h6c0-1 .4-1.8 1-2.3A7 7 0 0 0 12 2z"/></svg><span>Resolver</span></button>
+    <button class="tab" role="tab" data-tab="practica" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/></svg><span>Práctica</span></button>
+    <button class="tab" role="tab" data-tab="simulacro" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg><span>Simulacro</span></button>
+    <button class="tab" role="tab" data-tab="notas" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h8M8 14h4"/></svg><span>Notas</span></button>
+  </nav>
+</header>
+
+<main>
+  <section class="view active" id="view-teoria" role="tabpanel"></section>
+  <section class="view" id="view-resolver" role="tabpanel"></section>
+  <section class="view" id="view-practica" role="tabpanel"></section>
+  <section class="view" id="view-simulacro" role="tabpanel"></section>
+  <section class="view" id="view-notas" role="tabpanel"></section>
+</main>
+
+<script src="js/util.js"></script>
+<script src="js/svg.js"></script>
+<script src="js/generators.js"></script>
+<script src="js/data-mcq.js"></script>
+<script src="js/data-cases.js"></script>
+<script src="js/data-theory.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
