@@ -662,7 +662,150 @@
     compute();
   }
 
-  const RENDER = { teoria: renderTeoria, resolver: renderResolver, practica: renderPractica, simulacro: renderSimulacro, notas: renderNotas };
+  // ---------- Videos y audio ----------
+  function fmtTime(s) {
+    s = Math.max(0, Math.floor(s || 0));
+    const hh = Math.floor(s / 3600), mm = Math.floor((s % 3600) / 60), ss = s % 60;
+    return (hh ? hh + ':' + String(mm).padStart(2, '0') : mm) + ':' + String(ss).padStart(2, '0');
+  }
+  function renderVideos() {
+    const v = $('#view-videos');
+    const M = window.MEDIA;
+    if (!M || !M.full) { v.innerHTML = '<div class="card"><p>Los videos todavía no están disponibles.</p></div>'; return; }
+    const items = [M.full].concat(M.topics);
+    const ITEM = Object.fromEntries(items.map((x) => [x.id, x]));
+    const st = store.get('media', { mode: 'audio', id: 'completo', rate: 1, auto: true, pos: {} });
+    if (!ITEM[st.id]) st.id = 'completo';
+    st.pos = st.pos || {};
+    const save = () => store.set('media', st);
+    const label = (x) => x.id === 'completo' ? 'Repaso completo' : `S${x.n} · ${x.name}`;
+    v.innerHTML = `
+      <h2>Videos y audio de repaso</h2>
+      <p class="lead">Un repaso consolidado de las clases 9 a 14 y uno por clase, narrados a partir de la teoría de esta web. Usa <b>Solo audio</b> para seguir escuchando con el celular bloqueado o con otra app abierta.</p>
+      <div class="card player-card">
+        <div class="row between">
+          <div class="seg" role="group" aria-label="Formato">
+            <button data-mode="video" aria-pressed="${st.mode === 'video'}">Video</button>
+            <button data-mode="audio" aria-pressed="${st.mode === 'audio'}">Solo audio</button>
+          </div>
+          <label class="row" style="gap:6px">Velocidad
+            <select id="mRate" style="width:auto">${[0.75, 1, 1.25, 1.5, 1.75, 2].map((r) => `<option value="${r}" ${+st.rate === r ? 'selected' : ''}>${String(r).replace('.', ',')}×</option>`).join('')}</select>
+          </label>
+        </div>
+        <div class="row between" style="margin-top:12px"><h3 id="mTitle" style="margin:0"></h3><span class="muted" id="mInfo"></span></div>
+        <div id="mStage" class="media-stage"></div>
+        <div class="row" style="margin-top:10px">
+          <button class="btn" id="mBack" aria-label="Retroceder 15 segundos">−15 s</button>
+          <button class="btn" id="mFwd" aria-label="Adelantar 15 segundos">+15 s</button>
+          <label class="row" style="gap:6px;margin-left:auto"><input type="checkbox" id="mAuto" ${st.auto ? 'checked' : ''}> Seguir con la siguiente clase</label>
+        </div>
+        <p class="muted" id="mDl" style="margin-bottom:0"></p>
+      </div>
+      <div class="card">
+        <h3>Elige un repaso</h3>
+        <div class="media-list" role="list" aria-label="Repasos">${items.map((x) => `
+          <button class="media-item" role="listitem" data-id="${x.id}" aria-pressed="${x.id === st.id}">
+            <span class="mi-t">${esc(label(x))}</span><span class="mi-d">${Math.round(x.dur / 60)} min</span>
+          </button>`).join('')}
+        </div>
+      </div>
+      <div class="card">
+        <h3>Capítulos</h3>
+        <ol class="chapters" id="mChap"></ol>
+      </div>
+      <div class="card">
+        <h3>Escuchar con el celular bloqueado</h3>
+        <ul>
+          <li>Elige <b>Solo audio</b> y dale play. En iPhone y iPad, el video se pausa al bloquear la pantalla; el audio sigue sonando y se controla desde la pantalla de bloqueo.</li>
+          <li>Se recuerda dónde te quedaste en cada repaso.</li>
+          <li>Los videos y audios necesitan conexión: no se guardan para usar sin internet. Para escuchar sin datos, descarga el MP3 con el enlace de abajo del reproductor.</li>
+          <li>La narración usa una voz sintética. Si algo no coincide con tus apuntes, manda lo que dicen las clases.</li>
+        </ul>
+      </div>`;
+    let media = null, lastSave = 0;
+    const cur = () => ITEM[st.id];
+    const chapIdx = (t) => { const ch = cur().chapters; let i = 0; ch.forEach((c, k) => { if (t >= c.s) i = k; }); return i; };
+    function setSession() {
+      if (!('mediaSession' in navigator)) return;
+      const x = cur();
+      try {
+        navigator.mediaSession.metadata = new MediaMetadata({ title: label(x), artist: 'Genética · Examen Final', album: 'Repaso de las clases 9–14',
+          artwork: [{ src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' }, { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' }] });
+        const H = {
+          play: () => media && media.play(), pause: () => media && media.pause(),
+          seekbackward: (d) => { if (media) media.currentTime = Math.max(0, media.currentTime - ((d && d.seekOffset) || 15)); },
+          seekforward: (d) => { if (media) media.currentTime = Math.min(media.duration || 1e9, media.currentTime + ((d && d.seekOffset) || 15)); },
+          seekto: (d) => { if (media && d && typeof d.seekTime === 'number') media.currentTime = d.seekTime; },
+          previoustrack: () => { if (!media) return; const ch = cur().chapters, i = chapIdx(media.currentTime - 3); media.currentTime = ch[Math.max(0, i)].s; },
+          nexttrack: () => { if (!media) return; const ch = cur().chapters, i = chapIdx(media.currentTime); if (ch[i + 1]) media.currentTime = ch[i + 1].s; }
+        };
+        Object.keys(H).forEach((k) => { try { navigator.mediaSession.setActionHandler(k, H[k]); } catch (e) { /* acción no soportada */ } });
+      } catch (e) { /* sin Media Session */ }
+    }
+    function markChapter() {
+      if (!media) return;
+      const i = chapIdx(media.currentTime);
+      $$('#mChap li', v).forEach((li, k) => li.classList.toggle('now', k === i));
+    }
+    function load(autoplay) {
+      const x = cur();
+      const wasPlaying = autoplay;
+      if (media) { media.pause(); media.removeAttribute('src'); media.load(); }
+      const tag = st.mode === 'video' ? 'video' : 'audio';
+      $('#mStage', v).innerHTML = tag === 'video'
+        ? `<video controls playsinline preload="metadata" poster="" src="${x.video}"></video>`
+        : `<div class="audio-art"><img src="icons/icon-192.png" alt="" width="64" height="64"><div><b>${esc(label(x))}</b><div class="muted">Solo audio · ${Math.round(x.dur / 60)} min</div></div></div><audio controls preload="metadata" src="${x.audio}"></audio>`;
+      media = $(tag, v);
+      media.playbackRate = +st.rate || 1;
+      $('#mTitle', v).textContent = label(x);
+      $('#mInfo', v).textContent = fmtTime(x.dur);
+      $('#mChap', v).innerHTML = x.chapters.map((c, k) => `<li><button class="chap" data-k="${k}"><span>${esc(c.t)}</span><span class="muted">${fmtTime(c.s)}</span></button></li>`).join('');
+      $$('#mChap .chap', v).forEach((b) => b.addEventListener('click', () => { media.currentTime = x.chapters[+b.dataset.k].s; media.play().catch(() => {}); }));
+      $('#mDl', v).innerHTML = `Descargar: <a href="${x.audio}" download>MP3 (${String(x.audioMB).replace('.', ',')} MB)</a> · <a href="${x.video}" download>MP4 (${String(x.videoMB).replace('.', ',')} MB)</a>`;
+      const resume = st.pos[x.id] || 0;
+      media.addEventListener('loadedmetadata', () => {
+        media.playbackRate = +st.rate || 1;
+        if (resume > 5 && resume < (media.duration || x.dur) - 5) media.currentTime = resume;
+        markChapter();
+      }, { once: true });
+      media.addEventListener('timeupdate', () => {
+        markChapter();
+        const now = Date.now();
+        if (now - lastSave > 4000) { lastSave = now; st.pos[x.id] = media.currentTime; save(); }
+      });
+      media.addEventListener('pause', () => { st.pos[x.id] = media.currentTime; save(); });
+      media.addEventListener('ratechange', () => { if (media.playbackRate !== +st.rate) { st.rate = media.playbackRate; save(); $('#mRate', v).value = String(st.rate); } });
+      media.addEventListener('ended', () => {
+        st.pos[x.id] = 0; save();
+        const i = items.findIndex((y) => y.id === x.id);
+        if (st.auto && x.id !== 'completo' && items[i + 1]) select(items[i + 1].id, true);
+      });
+      setSession();
+      if (wasPlaying) media.play().catch(() => {});
+    }
+    function select(id, autoplay) {
+      if (media && !media.paused) { st.pos[st.id] = media.currentTime; }
+      st.id = id; save();
+      $$('.media-item', v).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.id === id)));
+      load(autoplay);
+    }
+    $$('.media-item', v).forEach((b) => b.addEventListener('click', () => select(b.dataset.id, !!(media && !media.paused))));
+    $$('[data-mode]', v).forEach((b) => b.addEventListener('click', () => {
+      if (st.mode === b.dataset.mode) return;
+      const playing = media && !media.paused;
+      if (media) st.pos[st.id] = media.currentTime;
+      st.mode = b.dataset.mode; save();
+      $$('[data-mode]', v).forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      load(playing);
+    }));
+    $('#mRate', v).addEventListener('change', (e) => { st.rate = +e.target.value; save(); if (media) media.playbackRate = st.rate; });
+    $('#mAuto', v).addEventListener('change', (e) => { st.auto = e.target.checked; save(); });
+    $('#mBack', v).addEventListener('click', () => { if (media) media.currentTime = Math.max(0, media.currentTime - 15); });
+    $('#mFwd', v).addEventListener('click', () => { if (media) media.currentTime = Math.min(media.duration || 1e9, media.currentTime + 15); });
+    load(false);
+  }
+
+  const RENDER = { teoria: renderTeoria, resolver: renderResolver, practica: renderPractica, simulacro: renderSimulacro, videos: renderVideos, notas: renderNotas };
   const startTab = (location.hash || '').replace('#', '') || store.get('tab', 'teoria');
   showTab(RENDER[startTab] ? startTab : 'teoria');
 

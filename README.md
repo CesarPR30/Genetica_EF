@@ -7,9 +7,10 @@ Sitio estático (sin build) para estudiar el Examen Final de Genética (semanas 
 - **Cómo resolver**: receta, trampas y ejemplo resuelto para cada tipo de cálculo, con botón "Otro ejemplo"; guía para casos y estrategia para preguntas de marcar.
 - **Práctica**: 172 preguntas para marcar con explicación por opción; 11 generadores de casos con autograder; 20 casos de razonamiento con respuesta modelo y rúbrica.
 - **Simulacro**: 14 preguntas + 3 casos (20 puntos), temporizador configurable (120 min por defecto), nota y desglose por tema.
+- **Videos**: repaso consolidado (clases 9–14) y un video por clase, cada uno también en versión solo audio (MP3) para escuchar con el celular bloqueado; capítulos, velocidad y posición recordada. Están en `media/` y no se guardan para uso sin conexión.
 - **Notas**: simulador EP 20 % · EC1 30 % · EC2 20 % · EF 30 %, meta configurable.
 
-Funciona sin conexión (PWA) y guarda el progreso en `localStorage`.
+Funciona sin conexión (PWA, salvo los videos y audios) y guarda el progreso en `localStorage`.
 
 ## Publicar en GitHub Pages
 Settings → Pages → Source: *Deploy from a branch* → Branch `main`, carpeta `/ (root)` → Save.
